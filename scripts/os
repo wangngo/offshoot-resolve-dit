@@ -1,0 +1,28 @@
+#!/bin/sh
+# Wrapper API URL-scheme OffShoot (cần license Pro). In nội dung response log.
+# Response hay là success, nhưng cũng có thể là tên action hoặc 'mainview'; chỉ 'fail' mới tính là lỗi.
+# Kiểm tra kết quả thật bằng transfer log, đừng chỉ dựa vào response.
+# Dùng:  scripts/os open | quit | reset [sources|destinations] | src <path> [label]
+#        scripts/os dst <path> | add | reload | raw '<offshoot://...>'
+LOG="$HOME/Library/Logs/Hedge/urlSchemeResponseLog.txt"
+enc() { python3 -c 'import sys,urllib.parse;print(urllib.parse.quote(sys.argv[1],safe=""))' "$1"; }
+json() { python3 -c 'import json,sys;print(json.dumps(sys.argv[1:]))' "$@"; }
+case "$1" in
+  open|quit|restart|update|addTransfers|reloadPresets) URL="offshoot://$1" ;;
+  add)    URL="offshoot://addTransfers" ;;
+  reload) URL="offshoot://reloadPresets" ;;
+  reset)  URL="offshoot://reset${2:+?type=$2}" ;;
+  src)    [ -d "$2" ] || { echo "không thấy nguồn: $2" >&2; exit 2; }
+          URL="offshoot://setSource?paths=$(enc "$(json "$2")")${3:+&label=$(enc "$3")}" ;;
+  dst)    [ -d "$2" ] || { echo "không thấy đích: $2" >&2; exit 2; }
+          URL="offshoot://setDestination?path=$(enc "$2")" ;;
+  raw)    URL="$2" ;;
+  *)      sed -n '2,4p' "$0"; exit 1 ;;
+esac
+: > "$LOG" 2>/dev/null
+open "$URL"
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  r=$(cat "$LOG" 2>/dev/null); [ -n "$r" ] && { echo "$1: $r"; [ "$r" != fail ]; exit; }
+  sleep 0.5
+done
+echo "$1: (không có phản hồi — license chưa Pro hoặc app chưa chạy?)"; exit 3

@@ -1,0 +1,22 @@
+#!/bin/sh
+# Report offload (HTML + PDF) từ transfer log JSON, dùng reports-cli có sẵn trong OffShoot.
+# Dùng:  scripts/report <ngày YYYY-MM-DD | file.json …> -o <thư mục ra> [-t "Tiêu đề"] [-n "Ghi chú"]
+# PDF in bằng Chrome headless (reports-cli chỉ ra HTML; GUI: Window > Transfer Logs > Create Report).
+RC=/Applications/OffShoot.app/Contents/Resources/reports-cli-darwin-universal
+LOGS="$HOME/Library/Application Support/OffShoot/Transfer Logs"
+CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+OUT=. TITLE="Offload Report" NOTE=""
+set --  "$@"; ARGS=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -o) OUT=$2; shift 2 ;; -t) TITLE=$2; shift 2 ;; -n) NOTE=$2; shift 2 ;;
+    *) if [ -d "$LOGS/$1" ]; then ARGS="$ARGS -d \"$LOGS/$1\""; else ARGS="$ARGS -f \"$1\""; fi; shift ;;
+  esac
+done
+[ -n "$ARGS" ] || { sed -n '2,4p' "$0"; exit 1; }
+mkdir -p "$OUT"; NAME="Report_$(date +%Y%m%d_%H%M%S)"
+SET=$(python3 -c 'import json,sys;print(json.dumps({"logo":"","title":sys.argv[1],"notes":sys.argv[2]}))' "$TITLE" "$NOTE")
+eval "\"$RC\" generate $ARGS -o \"$OUT/$NAME.html\" --settings '$SET'" || exit 1
+[ -x "$CHROME" ] && "$CHROME" --headless=new --disable-gpu --no-pdf-header-footer \
+  --print-to-pdf="$OUT/$NAME.pdf" "file://$(cd "$OUT" && pwd)/$NAME.html" 2>/dev/null
+ls -1 "$OUT/$NAME".*

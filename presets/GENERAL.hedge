@@ -1,0 +1,16 @@
+[
+  {
+    "folderPattern": "",
+    "labelPattern": "",
+    "renamePattern": "",
+    "counter": "001",
+    "doNotCopyFiles": [
+      ""
+    ],
+    "ignoreBundles": [
+      ""
+    ],
+    "flattenFolders": false,
+    "ignoreEmptyFolders": false
+  }
+]

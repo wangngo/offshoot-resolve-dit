@@ -1,0 +1,9 @@
+*.mhl
+ascmhl/
+Transfer Logs/
+reports/
+*.log
+.DS_Store
+__pycache__/
+license*
+!LICENSE

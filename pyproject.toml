@@ -1,0 +1,15 @@
+[project]
+name = "offshoot-resolve-dit"
+version = "0.1.0"
+description = "On-set DIT MCP Server & 3-2-1 Physical-Disk ASC MHL Handoff Gate for OffShoot Pro (Hedge) to DaVinci Resolve Studio Dailies"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "xxhash>=3.0.0",
+]
+
+[project.optional-dependencies]
+mcp = [
+    "mcp<2",
+]

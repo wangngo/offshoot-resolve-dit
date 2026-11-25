@@ -1,0 +1,32 @@
+diff --git a/src/granular/common.py b/src/granular/common.py
+index 5687ffa..d31a749 100644
+--- a/src/granular/common.py
++++ b/src/granular/common.py
+@@ -786,6 +786,11 @@ def _build_audio_sync_settings(resolve_obj, sync_mode=None, channel_number=None,
+         settings[resolve_obj.AUDIO_SYNC_RETAIN_EMBEDDED_AUDIO] = bool(retain_embedded_audio)
+     if retain_video_metadata is not None:
+         settings[resolve_obj.AUDIO_SYNC_RETAIN_VIDEO_METADATA] = bool(retain_video_metadata)
++    # The Resolve object returns None for ANY unknown attribute (no AttributeError), so a misspelled
++    # constant (e.g. AUDIO_SYNC_WAVEFORMS) yields a None key/value and AutoSyncAudio silently returns False.
++    bad = [repr(k) for k, v in settings.items() if k is None or v is None]
++    if bad:
++        return None, {"error": f"AUDIO_SYNC_* constant resolved to None (unknown name on this Resolve version): {bad}"}
+     return settings, None
+ 
+ 
+diff --git a/src/server.py b/src/server.py
+index 08578a0..3047701 100644
+--- a/src/server.py
++++ b/src/server.py
+@@ -14874,6 +14874,11 @@ def _safe_import_media(mp, p: Dict[str, Any]):
+             errors.append(path_err)
+     if errors:
+         return _err("; ".join(errors))
++    # MediaPool.ImportMedia([<directory>]) returns [] without error (verified Resolve Studio 21.2).
++    dirs = [x for x in paths if os.path.isdir(x)]
++    if dirs:
++        return _err(f"ImportMedia does not import directories (returns [] silently): {dirs}. "
++                    "Pass a list of media file paths instead.")
+     if _coerce_bool(p.get("dry_run")):
+         return _ok(would_import=paths, target_folder=p.get("target_folder"))
+     previous, folder_err = _set_current_folder_temporarily(mp, p.get("target_folder"))
